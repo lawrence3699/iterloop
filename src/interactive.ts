@@ -21,20 +21,29 @@ export async function interactive(): Promise<LoopConfig | null> {
   p.intro("Configure your iterloop session");
 
   // ── Working directory (first) ─────────────────
-  let dir: string;
-  while (true) {
-    const dirInput = await p.text({
-      message: "Working directory",
-      placeholder: ". (current directory)",
-      defaultValue: ".",
-    });
-    if (p.isCancel(dirInput)) { p.cancel("Cancelled."); return null; }
-    const resolved = resolve(dirInput || ".");
-    if (existsSync(resolved)) {
-      dir = dirInput;
-      break;
+  const dirChoice = await p.select({
+    message: "Working directory",
+    options: [
+      { value: "cwd" as const, label: `Current directory (${process.cwd()})`, hint: "recommended" },
+      { value: "custom" as const, label: "Custom path" },
+    ],
+  });
+  if (p.isCancel(dirChoice)) { p.cancel("Cancelled."); return null; }
+
+  let dir = ".";
+  if (dirChoice === "custom") {
+    while (true) {
+      const dirInput = await p.text({
+        message: "Enter path",
+        placeholder: "/path/to/your/project",
+      });
+      if (p.isCancel(dirInput)) { p.cancel("Cancelled."); return null; }
+      if (existsSync(resolve(dirInput))) {
+        dir = dirInput;
+        break;
+      }
+      p.log.error(`Directory not found: ${resolve(dirInput)}. Please try again.`);
     }
-    p.log.error(`Directory not found: ${resolved}. Please try again.`);
   }
 
   // ── Executor ────────────────────────────────

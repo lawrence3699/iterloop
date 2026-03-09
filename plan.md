@@ -76,9 +76,16 @@ iterloop
   ║                                                              ║
   ╚══════════════════════════════════════════════════════════════╝
 
-  ◇  Working directory
-  │  . (current)
-  │  (路径无效时提示重新输入，不退出程序)
+  ◆  Working directory
+  │  ● Current directory (推荐)   ─── 使用当前终端所在目录
+  │  ○ Custom path                ─── 手动输入路径
+  │
+  │  选择 "Custom path" 后弹出文本输入框：
+  │  ◇  Enter path
+  │  │  /Users/you/project
+  │  路径无效时 p.log.error() 提示，重新弹出全新输入框
+  │
+  │  实现方式：先用 p.select() 二选一，选 custom 后 while 循环 p.text() 输入路径
   │
   ◆  Select executor
   │
@@ -202,7 +209,7 @@ Banner 框内功能：
 |------|-----------|--------|
 | Welcome | 自定义渲染 | 双线框包裹渐变大字 banner + 引擎检测状态面板 |
 | Intro | `intro()` | 过渡到 @clack 流程线 |
-| Directory | `text()` | 默认值 `.`，validate 检查路径是否存在，不存在则提示重新输入（不退出） |
+| Directory | `select()` + `text()` | 先二选一（当前目录 / 自定义），选自定义后 while 循环 `text()` 输入路径，无效则重新输入 |
 | Executor | `select()` | 三选一，品牌色 ● + 引擎描述，不可用引擎自动标记禁用 |
 | Reviewer | `select()` | 三选一，同上 |
 | Task | `text()` | 必填，placeholder 提示用例 |
@@ -375,16 +382,22 @@ export async function interactive(): Promise<LoopConfig | null> {
   console.log(renderBanner());
   p.intro("AI-powered iterative collaboration");
 
-  // Working directory 放在最前面，validate 检查路径存在性
-  // 路径无效时返回错误提示，@clack/prompts 会自动要求用户重新输入，不会退出程序
-  const dir = await p.text({
+  // Working directory: 先选模式，再按需输入路径
+  const dirChoice = await p.select({
     message: "Working directory",
-    defaultValue: ".",
-    validate(value) {
-      const resolved = resolve(value);
-      if (!existsSync(resolved)) return `Directory not found: ${resolved}`;
-    },
+    options: [
+      { value: "cwd", label: `Current directory (${process.cwd()})`, hint: "recommended" },
+      { value: "custom", label: "Custom path" },
+    ],
   });
+  let dir = ".";
+  if (dirChoice === "custom") {
+    while (true) {
+      dir = await p.text({ message: "Enter path" });
+      if (existsSync(resolve(dir))) break;
+      p.log.error(`Directory not found: ${resolve(dir)}`);
+    }
+  }
 
   const executor = await p.select({
     message: "Select executor",
