@@ -21,18 +21,21 @@ export async function interactive(): Promise<LoopConfig | null> {
   p.intro("Configure your iterloop session");
 
   // ── Working directory (first) ─────────────────
-  const dir = await p.text({
-    message: "Working directory",
-    placeholder: ". (current directory)",
-    defaultValue: ".",
-    validate(value) {
-      const resolved = resolve(value || ".");
-      if (!existsSync(resolved)) {
-        return `Directory not found: ${resolved}`;
-      }
-    },
-  });
-  if (p.isCancel(dir)) { p.cancel("Cancelled."); return null; }
+  let dir: string;
+  while (true) {
+    const dirInput = await p.text({
+      message: "Working directory",
+      placeholder: ". (current directory)",
+      defaultValue: ".",
+    });
+    if (p.isCancel(dirInput)) { p.cancel("Cancelled."); return null; }
+    const resolved = resolve(dirInput || ".");
+    if (existsSync(resolved)) {
+      dir = dirInput;
+      break;
+    }
+    p.log.error(`Directory not found: ${resolved}. Please try again.`);
+  }
 
   // ── Executor ────────────────────────────────
   const executor = await p.select({
