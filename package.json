@@ -5,6 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
+    "iterloop": "dist/index.js",
     "cgloop": "dist/index.js"
   },
   "scripts": {

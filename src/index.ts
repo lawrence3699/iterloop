@@ -10,7 +10,7 @@ import { interactive } from "./interactive.js";
 const program = new Command();
 
 program
-  .name("cgloop")
+  .name("iterloop")
   .description("AI-powered iterative collaboration CLI — Claude, Gemini, Codex")
   .argument("[task]", "Task description (omit to enter interactive mode)")
   .option("-e, --executor <engine>", "Executor engine: claude | gemini | codex", "claude")

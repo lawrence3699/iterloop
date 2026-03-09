@@ -66,8 +66,11 @@ npx tsx src/index.ts "task"    # command-line mode
 ```bash
 npm run build
 npm link
-cgloop          # interactive mode
-cgloop "task"   # command-line mode
+
+# Now use from anywhere:
+iterloop          # interactive mode
+iterloop "task"   # command-line mode
+cgloop "task"     # short alias also works
 ```
 
 ## Usage
@@ -77,7 +80,7 @@ cgloop "task"   # command-line mode
 Run without arguments to get a guided setup experience:
 
 ```bash
-cgloop
+iterloop
 ```
 
 The interactive UI will walk you through:
@@ -93,14 +96,14 @@ Pass a task directly for scriptable usage:
 
 ```bash
 # Default: Claude executes, Gemini reviews
-cgloop "Write a quicksort implementation in Python"
+iterloop "Write a quicksort implementation in Python"
 
 # Choose engines
-cgloop -e codex -r claude "Build a REST API with Express"
-cgloop -e gemini -r codex "Fix the authentication bug"
+iterloop -e codex -r claude "Build a REST API with Express"
+iterloop -e gemini -r codex "Fix the authentication bug"
 
 # Full options
-cgloop -e codex -r gemini -n 5 -d ./my-project -v "Add unit tests"
+iterloop -e codex -r gemini -n 5 -d ./my-project -v "Add unit tests"
 ```
 
 ### Options

@@ -67,8 +67,11 @@ npx tsx src/index.ts "任务"    # 命令行模式
 ```bash
 npm run build
 npm link
-cgloop          # 交互模式
-cgloop "任务"   # 命令行模式
+
+# 之后在任何目录直接使用
+iterloop          # 交互模式
+iterloop "任务"   # 命令行模式
+cgloop "任务"     # 短别名同样可用
 ```
 
 ## 使用方法
@@ -78,7 +81,7 @@ cgloop "任务"   # 命令行模式
 无参数运行，进入引导式配置界面：
 
 ```bash
-cgloop
+iterloop
 ```
 
 交互界面会引导你：
@@ -94,14 +97,14 @@ cgloop
 
 ```bash
 # 默认：Claude 执行，Gemini 审查
-cgloop "写一个 Python 快速排序实现"
+iterloop "写一个 Python 快速排序实现"
 
 # 选择引擎
-cgloop -e codex -r claude "用 Express 写一个 REST API"
-cgloop -e gemini -r codex "修复认证模块的 bug"
+iterloop -e codex -r claude "用 Express 写一个 REST API"
+iterloop -e gemini -r codex "修复认证模块的 bug"
 
 # 完整选项
-cgloop -e codex -r gemini -n 5 -d ./my-project -v "给用户服务添加单元测试"
+iterloop -e codex -r gemini -n 5 -d ./my-project -v "给用户服务添加单元测试"
 ```
 
 ### 选项说明

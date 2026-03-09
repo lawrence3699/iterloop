@@ -4,14 +4,54 @@
 
 在 v0.1 基础上引入 **Codex CLI** 作为第三个引擎，用户可以从 Claude / Gemini / Codex 中任选一个作为**执行者**，再任选一个作为**审查者**。
 
-新增**交互引导模式**：无参数运行 `cgloop` 时进入交互式引导界面，逐步选择配置；同时保留命令行参数模式以便脚本化使用。
+新增**交互引导模式**：无参数运行 `iterloop` 时进入交互式引导界面，逐步选择配置；同时保留命令行参数模式以便脚本化使用。
+
+## Global Command: `iterloop`
+
+全局安装后，在终端任意位置输入 `iterloop` 即可启动（类似 `claude` 或 `gemini` 的使用方式）：
+
+```bash
+# 全局安装（一次性）
+cd iterloop-v0.15
+npm install && npm run build && npm link
+
+# 之后在任何目录直接使用
+iterloop                              # 交互模式
+iterloop "写一个快速排序"              # 命令行模式
+iterloop -e codex -r claude "任务"    # 指定引擎
+```
+
+### 实现方式
+
+`package.json` 中的 `bin` 字段注册全局命令：
+
+```json
+{
+  "bin": {
+    "iterloop": "dist/index.js"
+  }
+}
+```
+
+`dist/index.js` 顶部包含 shebang `#!/usr/bin/env node`，`npm link` 会在系统 PATH 中创建符号链接，使 `iterloop` 命令全局可用。
+
+同时保留 `cgloop` 作为短别名：
+
+```json
+{
+  "bin": {
+    "iterloop": "dist/index.js",
+    "cgloop": "dist/index.js"
+  }
+}
+```
 
 ## Two Modes of Operation
 
 ### Mode 1: Interactive (无参数启动)
 
 ```bash
-cgloop
+iterloop
 ```
 
 进入交互引导界面：
@@ -70,8 +110,8 @@ cgloop
 ### Mode 2: Command-line (带参数启动)
 
 ```bash
-cgloop "写一个快速排序"
-cgloop -e codex -r claude -n 5 -d ./my-project -v "添加单元测试"
+iterloop "写一个快速排序"
+iterloop -e codex -r claude -n 5 -d ./my-project -v "添加单元测试"
 ```
 
 ### Mode Detection Logic
@@ -328,7 +368,7 @@ if (task) {
 
 CLI 参数（命令行模式）：
 ```
-cgloop [task]                         # task 可选，无则进入交互模式
+iterloop [task]                         # task 可选，无则进入交互模式
   -e, --executor <engine>             # claude | gemini | codex  (default: claude)
   -r, --reviewer <engine>             # claude | gemini | codex  (default: gemini)
   -n, --iterations <number>           # 最大迭代轮数 (default: 3)
