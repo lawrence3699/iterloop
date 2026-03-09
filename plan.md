@@ -6,6 +6,8 @@
 
 新增**交互引导模式**：无参数运行 `iterloop` 时进入交互式引导界面，逐步选择配置；同时保留命令行参数模式以便脚本化使用。
 
+新增**多轮对话**：用户可以与 executor 进行多轮交互对话（例如先让 Claude 写 plan.md，确认后再让它写代码），所有对话结束后再整体提交给 reviewer 审查。
+
 ## Global Command: `iterloop`
 
 全局安装后，在终端任意位置输入 `iterloop` 即可启动（类似 `claude` 或 `gemini` 的使用方式）：
@@ -219,6 +221,113 @@ Banner 框内功能：
 | Confirm | `confirm()` | "Launch?" |
 | Start | `outro()` | 过渡到执行 |
 
+### Multi-Turn Conversation (用户与 Executor 多轮对话)
+
+在 executor 执行前，用户可以与 executor 进行多轮对话，而不是只发一次任务。
+这对于复杂任务非常重要，例如：
+
+1. 用户："帮我写一个 REST API"
+2. Claude：先写了 plan.md
+3. 用户："plan.md 没问题，开始写代码"
+4. Claude：写完代码
+5. 用户：输入 `/done` → 结束对话，进入 reviewer 审查
+
+#### 工作流变化
+
+```
+原来：
+  用户任务 → Executor 一次性执行 → Reviewer 审查
+
+现在：
+  用户任务 → [多轮对话] → 用户输入 /done → Reviewer 审查
+              │
+              ├─ 用户发消息 → Executor 回复
+              ├─ 用户发消息 → Executor 回复
+              ├─ ...
+              └─ 用户输入 /done → 结束对话阶段
+```
+
+#### 输入框 UI
+
+用户在多轮对话中的输入使用带边框的输入区域，类似 Claude CLI / Gemini CLI 风格：
+
+```
+  ┌─ ■ Claude (executor) ─────────────────────────────────┐
+  │                                                        │
+  │  (Claude's response here...)                           │
+  │                                                        │
+  └────────────────────────────────────────────────────────┘
+
+  ──────────────────────────────────────────── ▪▪▪ ─
+  ❯ 用户在这里输入下一条消息 (输入 /done 提交审查)
+  ──────────────────────────────────────────────────
+```
+
+特点：
+- 上下两条横线框出输入区域
+- `❯` 提示符
+- 横线中间有 `▪▪▪` 装饰
+- 输入 `/done` 结束对话，将所有上下文提交给 reviewer
+- 输入 `/cancel` 取消当前会话
+
+#### 实现方式
+
+对话历史管理：
+- 维护一个 `messages: { role: "user" | "executor", content: string }[]` 数组
+- 每次调用 executor 时，将完整对话历史组装为 prompt 发送
+- executor 只看到纯文本形式的历史 + 最新消息
+
+```typescript
+// 组装 prompt 时将对话历史拼接
+function buildConversationPrompt(messages: Message[]): string {
+  return messages.map(m =>
+    m.role === "user"
+      ? `## User\n${m.content}`
+      : `## ${executor.label}\n${m.content}`
+  ).join("\n\n");
+}
+```
+
+#### 输入框渲染 (`input.ts`)
+
+使用 Node.js 内置 `readline` 实现带边框的输入：
+
+```typescript
+import * as readline from "node:readline";
+
+function renderInputBox(): void {
+  const cols = process.stdout.columns || 80;
+  const bar = "─".repeat(cols - 8);
+  console.log(dim(`  ${bar} ▪▪▪ ─`));
+}
+
+async function promptUser(): Promise<string> {
+  renderInputBox();
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => {
+    rl.question("  ❯ ", (answer) => {
+      rl.close();
+      const bar = "─".repeat((process.stdout.columns || 80) - 4);
+      console.log(dim(`  ${bar}`));
+      resolve(answer.trim());
+    });
+  });
+}
+```
+
+#### 对话阶段在 loop 中的位置
+
+```
+每轮迭代：
+  1. [多轮对话阶段]
+     - 首轮：初始任务 + 用户可能的后续指令
+     - 后续轮：reviewer 反馈 + 用户可能的后续指令
+     - 用户输入 /done 结束对话
+  2. [Reviewer 审查]
+     - 审查 executor 的最终输出
+  3. [判断是否通过]
+```
+
 ### Loop Execution Display
 
 迭代执行阶段使用品牌色区分不同引擎的输出区块：
@@ -226,13 +335,27 @@ Banner 框内功能：
 ```
   ══════════ Iteration 1 / 3 ══════════
 
-  ┌─ ■ Claude 执行中... ──────────────────────┐
+  ┌─ ■ Claude (executor) ─────────────────────┐
   │                                            │
-  │  (Claude's output here)                    │
+  │  (Claude's response)                       │
   │                                            │
-  └──────────────────────── ✓ done (12.3s) ────┘
+  └────────────────────────────────────────────┘
 
-  ┌─ ■ Gemini 审查中... ──────────────────────┐
+  ──────────────────────────────────── ▪▪▪ ─
+  ❯ plan.md 没问题，开始写代码
+  ──────────────────────────────────────────
+
+  ┌─ ■ Claude (executor) ─────────────────────┐
+  │                                            │
+  │  (Claude writes code...)                   │
+  │                                            │
+  └────────────────────────────────────────────┘
+
+  ──────────────────────────────────── ▪▪▪ ─
+  ❯ /done
+  ──────────────────────────────────────────
+
+  ┌─ ■ Gemini (reviewer) ─────────────────────┐
   │                                            │
   │  Score: 7/10                               │
   │  Issues: ...                               │
@@ -252,6 +375,9 @@ Banner 框内功能：
 - 新增 `--executor` / `-e` 参数：选择执行者 (claude | gemini | codex)
 - 新增 `--reviewer` / `-r` 参数：选择审查者 (claude | gemini | codex)
 - 新增交互引导模式（无参数启动）
+- 新增多轮对话：用户可与 executor 多轮交互，`/done` 提交审查
+- 新增带边框输入框 UI（`input.ts`）
+- 新增对话管理模块（`conversation.ts`）
 - 预检模块只检查被选中的两个引擎
 - 统一的引擎抽象层
 - 新增依赖：`@clack/prompts`、`gradient-string`
@@ -304,6 +430,8 @@ iterloop-v0.15/
 │   ├── engine.ts         # Engine abstraction: claude/gemini/codex
 │   ├── preflight.ts      # Check selected engines availability
 │   ├── loop.ts           # Iteration loop (engine-agnostic)
+│   ├── conversation.ts   # Multi-turn conversation: user ↔ executor
+│   ├── input.ts          # Bordered input box (readline-based)
 │   └── colors.ts         # Terminal colors, brand colors, ANSI stripping
 ```
 
@@ -428,14 +556,70 @@ export async function interactive(): Promise<LoopConfig | null> {
 
 只检查用户选择的引擎，并在交互模式下使用 `@clack/prompts` 的 `spinner()` 显示检查进度。
 
-#### 5. `loop.ts` — Engine-Agnostic Loop
+#### 5. `conversation.ts` — Multi-Turn Conversation
 
-与 v0.1 逻辑相同，但增强视觉效果：
-- 每个引擎的输出用对应品牌色的边框包裹
-- 引擎名称前加品牌色 `■` 色块
-- 耗时显示用 dim gray
+用户与 executor 的多轮对话管理：
+
+```typescript
+interface Message {
+  role: "user" | "executor";
+  content: string;
+}
+
+async function runConversation(
+  engine: Engine,
+  initialPrompt: string,   // 首轮：任务描述 或 任务+reviewer反馈
+  opts: RunOptions,
+): Promise<{ messages: Message[]; finalOutput: string }> {
+  const messages: Message[] = [];
+  messages.push({ role: "user", content: initialPrompt });
+
+  while (true) {
+    // 将完整对话历史组装为 prompt 发给 executor
+    const prompt = buildConversationPrompt(messages);
+    const output = await engine.run(prompt, opts);
+    messages.push({ role: "executor", content: output });
+
+    // 显示 executor 输出
+    displayOutput(engine, output);
+
+    // 显示带边框输入框，等待用户输入
+    const userInput = await promptUser();
+
+    if (userInput === "/done") break;
+    if (userInput === "/cancel") throw new Error("Cancelled by user");
+
+    messages.push({ role: "user", content: userInput });
+  }
+
+  const finalOutput = messages.filter(m => m.role === "executor").pop()!.content;
+  return { messages, finalOutput };
+}
+```
+
+#### 6. `input.ts` — Bordered Input Box
+
+```typescript
+async function promptUser(): Promise<string> {
+  const cols = process.stdout.columns || 80;
+  const bar = "─".repeat(cols - 8);
+  console.log(dim(`  ${bar} ▪▪▪ ─`));
+  // readline prompt with ❯
+  const answer = await readlineQuestion("  ❯ ");
+  console.log(dim(`  ${"─".repeat(cols - 4)}`));
+  return answer.trim();
+}
+```
+
+#### 7. `loop.ts` — Engine-Agnostic Loop
+
+每轮迭代包含多轮对话阶段：
+- 调用 `runConversation()` 让用户与 executor 交互
+- 用户 `/done` 后将 finalOutput 发给 reviewer
+- reviewer 审查后进入下一轮（如果未通过）
+- 下一轮的初始 prompt 包含 reviewer 反馈
+- 每个引擎输出用对应品牌色边框包裹
 - APPROVED 用绿色高亮
-- Prompt 模板中引擎名称动态替换
 
 #### 6. `index.ts` — Entry Point
 
@@ -483,4 +667,7 @@ iterloop [task]                         # task 可选，无则进入交互模式
 - Codex exec 需要在 git 仓库中运行，添加 `--skip-git-repo-check` 兼容非 git 目录
 - 审查 / 修正 prompt 模板动态使用引擎名称
 - 交互模式下 Ctrl+C 随时取消，程序优雅退出
+- 多轮对话通过累积完整历史 + 每次发送全量 prompt 实现（无需 API session 管理）
+- 用户输入 `/done` 结束对话进入审查，`/cancel` 取消整个会话
+- 输入框使用 readline 实现，带 `───▪▪▪─` 边框 + `❯` 提示符
 - Banner 渐变自适应终端宽度

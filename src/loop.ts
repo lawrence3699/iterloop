@@ -1,5 +1,6 @@
 import { type Engine } from "./engine.js";
 import { bold, dim, green, yellow, brandColor } from "./colors.js";
+import { runConversation } from "./conversation.js";
 
 export interface LoopOptions {
   task: string;
@@ -15,13 +16,12 @@ function elapsed(startMs: number): string {
   return dim(`(${sec}s)`);
 }
 
-function engineHeader(label: string, engine: Engine, status: string): string {
+function reviewerHeader(engine: Engine): string {
   const color = brandColor(engine.name);
-  const bar = "─".repeat(48);
-  return color(`  ┌─ ■ ${label}: ${engine.label} ${status} ${"─".repeat(Math.max(0, 42 - label.length - engine.label.length - status.length))}┐`);
+  return color(`  ┌─ ■ ${engine.label} (reviewer) ${"─".repeat(Math.max(0, 44 - engine.label.length))}┐`);
 }
 
-function engineFooter(engine: Engine, timeStr: string): string {
+function reviewerFooter(engine: Engine, timeStr: string): string {
   const color = brandColor(engine.name);
   return color(`  └${"─".repeat(42)} ✓ done ${timeStr} ─┘`);
 }
@@ -29,7 +29,6 @@ function engineFooter(engine: Engine, timeStr: string): string {
 export async function runLoop(options: LoopOptions): Promise<void> {
   const { task, maxIterations, executor, reviewer, cwd, verbose } = options;
 
-  const execColor = brandColor(executor.name);
   const revColor = brandColor(reviewer.name);
 
   let executorOutput = "";
@@ -38,18 +37,18 @@ export async function runLoop(options: LoopOptions): Promise<void> {
   for (let i = 1; i <= maxIterations; i++) {
     console.log(bold(`\n  ${"═".repeat(12)} Iteration ${i} / ${maxIterations} ${"═".repeat(12)}\n`));
 
-    // ── Executor ────────────────────────────────
-    let execPrompt: string;
+    // ── Multi-turn conversation with executor ───
+    let initialPrompt: string;
     if (i === 1) {
-      execPrompt = task;
+      initialPrompt = task;
     } else {
-      execPrompt = [
+      initialPrompt = [
         `Please revise your previous work based on the following review feedback.`,
         "",
         "## Original Task",
         task,
         "",
-        `## Your Previous Output`,
+        "## Your Previous Output",
         executorOutput,
         "",
         `## Review Feedback from ${reviewer.label}`,
@@ -59,21 +58,8 @@ export async function runLoop(options: LoopOptions): Promise<void> {
       ].join("\n");
     }
 
-    console.log(engineHeader("Executing", executor, "..."));
-    console.log(execColor("  │"));
-    const execStart = Date.now();
-    executorOutput = await executor.run(execPrompt, { cwd, verbose });
-    console.log(execColor("  │"));
-
-    if (!verbose) {
-      const lines = executorOutput.split("\n");
-      for (const line of lines) {
-        console.log(execColor("  │") + `  ${line}`);
-      }
-      console.log(execColor("  │"));
-    }
-
-    console.log(engineFooter(executor, elapsed(execStart)));
+    const conversation = await runConversation(executor, initialPrompt, { cwd, verbose });
+    executorOutput = conversation.finalOutput;
 
     // ── Reviewer ────────────────────────────────
     const reviewPrompt = [
@@ -93,18 +79,18 @@ export async function runLoop(options: LoopOptions): Promise<void> {
     ].join("\n");
 
     console.log("");
-    console.log(engineHeader("Reviewing", reviewer, "..."));
+    console.log(reviewerHeader(reviewer));
     console.log(revColor("  │"));
+
     const revStart = Date.now();
     reviewerFeedback = await reviewer.run(reviewPrompt, { cwd, verbose });
     console.log(revColor("  │"));
 
-    const revLines = reviewerFeedback.split("\n");
-    for (const line of revLines) {
+    for (const line of reviewerFeedback.split("\n")) {
       console.log(revColor("  │") + `  ${line}`);
     }
     console.log(revColor("  │"));
-    console.log(engineFooter(reviewer, elapsed(revStart)));
+    console.log(reviewerFooter(reviewer, elapsed(revStart)));
 
     // ── Check approval ──────────────────────────
     if (reviewerFeedback.includes("APPROVED")) {
