@@ -20,6 +20,20 @@ export async function interactive(): Promise<LoopConfig | null> {
 
   p.intro("Configure your iterloop session");
 
+  // ── Working directory (first) ─────────────────
+  const dir = await p.text({
+    message: "Working directory",
+    placeholder: ". (current directory)",
+    defaultValue: ".",
+    validate(value) {
+      const resolved = resolve(value || ".");
+      if (!existsSync(resolved)) {
+        return `Directory not found: ${resolved}`;
+      }
+    },
+  });
+  if (p.isCancel(dir)) { p.cancel("Cancelled."); return null; }
+
   // ── Executor ────────────────────────────────
   const executor = await p.select({
     message: "Select executor",
@@ -65,20 +79,6 @@ export async function interactive(): Promise<LoopConfig | null> {
   });
   if (p.isCancel(iterations)) { p.cancel("Cancelled."); return null; }
 
-  // ── Working directory ───────────────────────
-  const dir = await p.text({
-    message: "Working directory",
-    placeholder: ". (current directory)",
-    defaultValue: ".",
-  });
-  if (p.isCancel(dir)) { p.cancel("Cancelled."); return null; }
-
-  const resolvedDir = resolve(dir);
-  if (!existsSync(resolvedDir)) {
-    p.cancel(`Directory not found: ${resolvedDir}`);
-    return null;
-  }
-
   // ── Verbose ─────────────────────────────────
   const verbose = await p.confirm({
     message: "Stream verbose output?",
@@ -87,6 +87,8 @@ export async function interactive(): Promise<LoopConfig | null> {
   if (p.isCancel(verbose)) { p.cancel("Cancelled."); return null; }
 
   // ── Summary ─────────────────────────────────
+  const resolvedDir = resolve(dir || ".");
+
   const engineLabel = (name: string) => {
     switch (name) {
       case "claude": return orange("●") + " Claude";
@@ -99,6 +101,7 @@ export async function interactive(): Promise<LoopConfig | null> {
   const summary = [
     `  Executor:    ${engineLabel(executor)}`,
     `  Reviewer:    ${engineLabel(reviewer)}`,
+    "",
     `  Task:        ${task.length > 40 ? task.slice(0, 40) + "..." : task}`,
     `  Iterations:  ${iterations}`,
     `  Directory:   ${resolvedDir}`,
@@ -117,7 +120,7 @@ export async function interactive(): Promise<LoopConfig | null> {
     return null;
   }
 
-  p.outro("Starting iterloop...");
+  p.outro("Launching iterloop...");
 
   return {
     executor,

@@ -57,26 +57,40 @@ iterloop
 进入交互引导界面：
 
 ```
-  ┌───────────────────────────────────────────────┐
-  │                                               │
-  │   ╦╔╦╗╔═╗╦═╗╦  ╔═╗╔═╗╔═╗                    │
-  │   ║ ║ ║╣ ╠╦╝║  ║ ║║ ║╠═╝                     │
-  │   ╩ ╩ ╚═╝╩╚═╩═╝╚═╝╚═╝╩    v0.15             │
-  │                                               │
-  │   AI-powered iterative collaboration          │
-  │   Claude · Gemini · Codex                     │
-  │                                               │
-  └───────────────────────────────────────────────┘
+  ╔══════════════════════════════════════════════════════════════╗
+  ║                                                              ║
+  ║   ██╗████████╗███████╗██████╗ ██╗      ██████╗  ██████╗ ██████╗  ║
+  ║   ██║╚══██╔══╝██╔════╝██╔══██╗██║     ██╔═══██╗██╔═══██╗██╔══██╗ ║
+  ║   ██║   ██║   █████╗  ██████╔╝██║     ██║   ██║██║   ██║██████╔╝ ║
+  ║   ██║   ██║   ██╔══╝  ██╔══██╗██║     ██║   ██║██║   ██║██╔═══╝  ║
+  ║   ██║   ██║   ███████╗██║  ██║███████╗╚██████╔╝╚██████╔╝██║      ║
+  ║   ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝ ╚═════╝  ╚═════╝╚═╝      ║
+  ║                                                              ║
+  ║   AI-powered iterative collaboration                v0.15    ║
+  ║                                                              ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║                                                              ║
+  ║   Engines:   ● Claude (v2.1.71)                              ║
+  ║              ● Gemini (v0.32.1)                              ║
+  ║              ● Codex  (v0.111.0)                             ║
+  ║                                                              ║
+  ╚══════════════════════════════════════════════════════════════╝
 
+  ◇  Working directory
+  │  . (current)
+  │  (路径无效时提示重新输入，不退出程序)
+  │
   ◆  Select executor
-  │  ● Claude    — Anthropic Claude Code CLI
-  │  ○ Gemini    — Google Gemini CLI
-  │  ○ Codex     — OpenAI Codex CLI
+  │
+  │  ● Claude    ─── Anthropic Claude Code CLI
+  │  ○ Gemini    ─── Google Gemini CLI
+  │  ○ Codex     ─── OpenAI Codex CLI
   │
   ◆  Select reviewer
-  │  ○ Claude
-  │  ● Gemini
-  │  ○ Codex
+  │
+  │  ○ Claude    ─── Anthropic Claude Code CLI
+  │  ● Gemini    ─── Google Gemini CLI
+  │  ○ Codex     ─── OpenAI Codex CLI
   │
   ◇  Enter your task
   │  Write a quicksort implementation in Python
@@ -84,28 +98,34 @@ iterloop
   ◇  Max iterations
   │  3
   │
-  ◇  Working directory
-  │  . (current)
-  │
   ◆  Stream verbose output?
   │  No / Yes
   │
-  ├──────────────────────────────────────────┤
-  │                                          │
-  │  Executor:    ■ Claude  (v2.1.71)        │
-  │  Reviewer:    ■ Gemini  (v0.32.1)        │
-  │  Task:        Write a quicksort ...      │
-  │  Iterations:  3                          │
-  │  Directory:   /Users/you/project         │
-  │  Verbose:     off                        │
-  │                                          │
-  ├──────────────────────────────────────────┤
+  ╔════════════════════ Configuration ═════════════════════╗
+  ║                                                        ║
+  ║   Executor:    ● Claude  (v2.1.71)                     ║
+  ║   Reviewer:    ● Gemini  (v0.32.1)                     ║
+  ║                                                        ║
+  ║   Task:        Write a quicksort implementation ...    ║
+  ║   Iterations:  3                                       ║
+  ║   Directory:   /Users/you/project                      ║
+  ║   Verbose:     off                                     ║
+  ║                                                        ║
+  ╚════════════════════════════════════════════════════════╝
   │
   ◆  Launch?
-  │  Yes, start / No, cancel
+  │  ● Yes, start
+  │  ○ No, cancel
   │
-  └  Starting iterloop...
+  └  Launching iterloop...
 ```
+
+交互界面设计要点：
+- 启动时显示大号 block-letter 渐变 ASCII art banner（7 行高），视觉冲击力强
+- Banner 下方实时显示引擎检测结果（带品牌色 ● 圆点 + 版本号），让用户立刻看到哪些引擎可用
+- 整体用双线框 ╔═╗ 包裹 banner 和配置摘要，区别于 @clack 的单线流程线，层次分明
+- Banner 和摘要框自适应终端宽度（窄终端回退为紧凑版）
+- 引擎不可用时 ● 变为灰色 ○ 并标注 (not found)，在选择引擎步骤中自动禁用
 
 ### Mode 2: Command-line (带参数启动)
 
@@ -125,21 +145,42 @@ else                         → interactive mode
 
 ### Banner
 
-紧凑型 ASCII art（3-5 行），使用 `gradient-string` 渲染渐变色效果。
-根据终端宽度自适应：宽终端显示完整 banner，窄终端显示简化版。
+大号 block-letter ASCII art（7 行高），使用 `gradient-string` 渲染三色渐变。
+用双线框 `╔═╗` 包裹，下方紧跟引擎检测状态。根据终端宽度自适应。
 
 ```
-宽终端 (>= 60 cols):
-  ╦╔╦╗╔═╗╦═╗╦  ╔═╗╔═╗╔═╗
-  ║ ║ ║╣ ╠╦╝║  ║ ║║ ║╠═╝
-  ╩ ╩ ╚═╝╩╚═╩═╝╚═╝╚═╝╩    v0.15
+宽终端 (>= 70 cols):
+  ╔═══════════════════════════════════════════════════════╗
+  ║                                                       ║
+  ║   ██╗████████╗███████╗██████╗ ██╗      ...            ║
+  ║   ...  (7-line block letters, gradient rendered)       ║
+  ║                                                       ║
+  ║   AI-powered iterative collaboration         v0.15    ║
+  ║                                                       ║
+  ╠═══════════════════════════════════════════════════════╣
+  ║   Engines:  ● Claude (v2.1.71)                        ║
+  ║             ● Gemini (v0.32.1)                        ║
+  ║             ● Codex  (v0.111.0)                       ║
+  ╚═══════════════════════════════════════════════════════╝
 
-窄终端 (< 60 cols):
-  ◈ iterloop v0.15
+窄终端 (< 70 cols):
+  ╔═══════════════════════════════╗
+  ║  ◈ iterloop          v0.15   ║
+  ║  AI-powered iteration        ║
+  ╠═══════════════════════════════╣
+  ║  ● Claude  ● Gemini  ● Codex║
+  ╚═══════════════════════════════╝
 ```
 
 渐变色方案：从橙色 (#F07623, Claude) → 蓝色 (#4285F4, Gemini) → 绿色 (#10A37F, Codex)
 体现三个引擎的协作融合。
+
+Banner 框内功能：
+- 渐变色大字 logo，视觉冲击力强
+- tagline + 版本号
+- 实时检测已安装引擎，带品牌色圆点 + 版本号
+- 引擎不可用时显示灰色 ○ + `(not found)`
+- 双线框与后续 @clack 单线流程线形成层次对比
 
 ### Color System
 
@@ -159,12 +200,13 @@ else                         → interactive mode
 
 | Step | Component | Detail |
 |------|-----------|--------|
-| Welcome | `intro()` | 渐变 banner + 版本号 + tagline |
-| Executor | `select()` | 三选一，每项带引擎描述和品牌色圆点 |
+| Welcome | 自定义渲染 | 双线框包裹渐变大字 banner + 引擎检测状态面板 |
+| Intro | `intro()` | 过渡到 @clack 流程线 |
+| Directory | `text()` | 默认值 `.`，validate 检查路径是否存在，不存在则提示重新输入（不退出） |
+| Executor | `select()` | 三选一，品牌色 ● + 引擎描述，不可用引擎自动标记禁用 |
 | Reviewer | `select()` | 三选一，同上 |
 | Task | `text()` | 必填，placeholder 提示用例 |
 | Iterations | `text()` | 默认值 3，validate 数字 |
-| Directory | `text()` | 默认值 `.`，validate 路径存在 |
 | Verbose | `confirm()` | 默认 No |
 | Summary | `note()` | 用品牌色展示配置摘要 |
 | Confirm | `confirm()` | "Launch?" |
@@ -260,27 +302,48 @@ iterloop-v0.15/
 
 ### Key Implementation Details
 
-#### 1. `banner.ts` — Responsive Gradient Banner
+#### 1. `banner.ts` — Large Gradient Banner with Engine Status
+
+渲染完整的欢迎界面，包含：
+- 双线框 `╔═╗` 包裹
+- 7 行高大号 block-letter ASCII art，`gradient-string` 三色渐变渲染
+- tagline + 版本号
+- 引擎检测面板：逐个尝试获取版本，品牌色 ● 表示可用，灰色 ○ 表示不可用
+- 自适应终端宽度，窄终端回退紧凑版
 
 ```typescript
 import gradient from "gradient-string";
+import { execFileSync } from "node:child_process";
 
-const FULL_BANNER = `
-╦╔╦╗╔═╗╦═╗╦  ╔═╗╔═╗╔═╗
-║ ║ ║╣ ╠╦╝║  ║ ║║ ║╠═╝
-╩ ╩ ╚═╝╩╚═╩═╝╚═╝╚═╝╩  `;
+const LARGE_LOGO = [
+  "██╗████████╗███████╗██████╗ ██╗      ██████╗  ██████╗ ██████╗ ",
+  "██║╚══██╔══╝██╔════╝██╔══██╗██║     ██╔═══██╗██╔═══██╗██╔══██╗",
+  "██║   ██║   █████╗  ██████╔╝██║     ██║   ██║██║   ██║██████╔╝",
+  "██║   ██║   ██╔══╝  ██╔══██╗██║     ██║   ██║██║   ██║██╔═══╝ ",
+  "██║   ██║   ███████╗██║  ██║███████╗╚██████╔╝╚██████╔╝██║     ",
+  "╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝ ╚═════╝  ╚═════╝╚═╝     ",
+];
 
-const COMPACT_BANNER = "◈ iterloop";
-
-// 三色渐变: Claude orange → Gemini blue → Codex green
 const iterGradient = gradient(["#F07623", "#4285F4", "#10A37F"]);
+
+// 检测引擎可用性，返回 { name, version | null }
+function detectEngines(): { name: string; label: string; version: string | null }[] { ... }
 
 export function renderBanner(): string {
   const cols = process.stdout.columns || 80;
-  const art = cols >= 60 ? FULL_BANNER : COMPACT_BANNER;
-  return iterGradient(art) + `  v0.15`;
+  const engines = detectEngines();
+
+  if (cols >= 70) {
+    // 大号 banner + 引擎面板，双线框包裹
+  } else {
+    // 紧凑版
+  }
 }
 ```
+
+Banner 在 `interactive.ts` 中调用，早于 @clack 流程线，形成两层视觉结构：
+1. **双线框 banner** — 品牌展示 + 系统状态
+2. **@clack 单线流程** — 用户配置步骤
 
 #### 2. `engine.ts` — Unified Engine
 
@@ -312,6 +375,17 @@ export async function interactive(): Promise<LoopConfig | null> {
   console.log(renderBanner());
   p.intro("AI-powered iterative collaboration");
 
+  // Working directory 放在最前面，validate 检查路径存在性
+  // 路径无效时返回错误提示，@clack/prompts 会自动要求用户重新输入，不会退出程序
+  const dir = await p.text({
+    message: "Working directory",
+    defaultValue: ".",
+    validate(value) {
+      const resolved = resolve(value);
+      if (!existsSync(resolved)) return `Directory not found: ${resolved}`;
+    },
+  });
+
   const executor = await p.select({
     message: "Select executor",
     options: [
@@ -321,7 +395,7 @@ export async function interactive(): Promise<LoopConfig | null> {
     ],
   });
 
-  // ... reviewer, task, iterations, dir, verbose ...
+  // ... reviewer, task, iterations, verbose ...
 
   // Summary note with brand colors
   p.note(summary, "Configuration");
