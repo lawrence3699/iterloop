@@ -15,24 +15,28 @@ User provides a task
 [Preflight] Verify selected CLIs are available
         |
         v
-+--- Iteration Loop (configurable rounds) ---+
-|                                             |
-|  1. Send task to Executor engine            |
-|     (round 1: original task                 |
-|      round 2+: task + reviewer feedback)    |
-|              |                              |
-|              v                              |
-|  2. Executor returns result                 |
-|              |                              |
-|              v                              |
-|  3. Send result to Reviewer engine          |
-|              |                              |
-|              v                              |
-|  4. Reviewer returns review                 |
-|     - Score >= 9: APPROVED, loop ends early |
-|     - Otherwise: next iteration             |
-|                                             |
-+---------------------------------------------+
++--- Iteration Loop (configurable rounds) --------+
+|                                                  |
+|  1. Send task to Executor engine                 |
+|     (round 1: original task                      |
+|      round 2+: task + reviewer feedback)         |
+|              |                                   |
+|              v                                   |
+|  2. Multi-turn conversation with Executor        |
+|     User can guide the work across turns:        |
+|       "write plan.md first" → executor works     |
+|       "looks good, now code it" → executor works |
+|       /done → submit for review                  |
+|              |                                   |
+|              v                                   |
+|  3. Send final output to Reviewer engine         |
+|              |                                   |
+|              v                                   |
+|  4. Reviewer returns review                      |
+|     - Score >= 9: APPROVED, loop ends early      |
+|     - Otherwise: next iteration                  |
+|                                                  |
++--------------------------------------------------+
         |
         v
    Final output
@@ -106,6 +110,28 @@ iterloop -e gemini -r codex "Fix the authentication bug"
 iterloop -e codex -r gemini -n 5 -d ./my-project -v "Add unit tests"
 ```
 
+### Multi-Turn Conversation
+
+During each iteration, you can have a multi-turn dialogue with the executor before submitting for review. This is useful when you want to guide the work step-by-step:
+
+```
+  ▶ Claude is working...
+
+  ┌─ ■ Claude (executor) ──────────────────────────┐
+  │                                                 │
+  │  [executor's output appears here]               │
+  │                                                 │
+  └─────────────────────────────────────────────────┘
+
+  ──────────────────── /done to submit · /cancel to abort ────
+  ❯ looks good, now write the implementation
+```
+
+**Commands:**
+- Type a message to continue the conversation with the executor
+- `/done` or press Enter — submit the executor's latest output for review
+- `/cancel` — abort the session
+
 ### Options
 
 | Option | Description | Default |
@@ -128,6 +154,8 @@ iterloop/
 │   ├── engine.ts           # Engine abstraction: Claude / Gemini / Codex
 │   ├── preflight.ts        # Verify selected engine availability
 │   ├── loop.ts             # Core iteration loop (engine-agnostic)
+│   ├── conversation.ts     # Multi-turn user↔executor dialogue
+│   ├── input.ts            # Bordered input prompt (readline)
 │   └── colors.ts           # Terminal colors, brand colors, ANSI stripping
 ├── package.json
 ├── tsconfig.json
