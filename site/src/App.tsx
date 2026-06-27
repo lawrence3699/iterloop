@@ -1,6 +1,7 @@
 import { LanguageProvider } from './i18n/LanguageContext'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
+import { TerminalDemo } from './components/TerminalDemo'
 
 export default function App() {
   return (
@@ -9,6 +10,9 @@ export default function App() {
         <Navbar />
         <main>
           <Hero />
+          <div className="-mt-10 px-5 sm:-mt-14">
+            <TerminalDemo />
+          </div>
         </main>
       </div>
     </LanguageProvider>
