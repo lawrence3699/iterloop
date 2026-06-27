@@ -4,35 +4,46 @@
 
 html {
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
 }
 
-@layer components {
-  /* Pure-CSS hero background: Claude coral + Gemini blue/violet converging. No images. */
-  .hero-aurora {
-    background:
-      radial-gradient(50% 55% at 18% 12%, rgba(232, 133, 95, 0.22), transparent 70%),
-      radial-gradient(48% 52% at 84% 16%, rgba(79, 134, 247, 0.2), transparent 70%),
-      radial-gradient(60% 60% at 52% 0%, rgba(124, 92, 255, 0.16), transparent 72%),
-      #ffffff;
-  }
-  .dot-grid {
-    background-image: radial-gradient(rgba(17, 24, 39, 0.06) 1px, transparent 1px);
-    background-size: 22px 22px;
-  }
+/*
+ * Liquid-glass utilities.
+ * Defined for reuse across glass surfaces. Not wired into the current layout,
+ * but kept available so glass panels can opt in with a single class.
+ */
+.liquid-glass {
+  position: relative;
+  background: rgba(255, 255, 255, 0.01);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.1);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .animate-fade-up,
-  .animate-fade-down,
-  .animate-hero-rise {
-    animation: none !important;
-  }
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    transition-duration: 0.001ms !important;
-  }
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.6),
+    rgba(255, 255, 255, 0.05) 40%,
+    rgba(255, 255, 255, 0.3)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.liquid-glass-strong {
+  background: rgba(255, 255, 255, 0.01);
+  backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.1);
 }
