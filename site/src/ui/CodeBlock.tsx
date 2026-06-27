@@ -18,7 +18,7 @@ export function CodeBlock({ code, label, className = '' }: CodeBlockProps) {
         <pre className="flex-1 overflow-x-auto font-mono text-[13px] leading-relaxed text-white/90">
           <code>{code}</code>
         </pre>
-        <CopyButton text={code} />
+        <CopyButton text={code} className="text-white/55 hover:bg-white/10 hover:text-white" />
       </div>
     </div>
   )

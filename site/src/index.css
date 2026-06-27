@@ -5,6 +5,22 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+@layer components {
+  /* Pure-CSS hero background: Claude coral + Gemini blue/violet converging. No images. */
+  .hero-aurora {
+    background:
+      radial-gradient(50% 55% at 18% 12%, rgba(232, 133, 95, 0.22), transparent 70%),
+      radial-gradient(48% 52% at 84% 16%, rgba(79, 134, 247, 0.2), transparent 70%),
+      radial-gradient(60% 60% at 52% 0%, rgba(124, 92, 255, 0.16), transparent 72%),
+      #ffffff;
+  }
+  .dot-grid {
+    background-image: radial-gradient(rgba(17, 24, 39, 0.06) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
