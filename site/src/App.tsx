@@ -6,6 +6,7 @@ import { HowItWorks } from './components/HowItWorks'
 import { Features } from './components/Features'
 import { QuickStart } from './components/QuickStart'
 import { Usage } from './components/Usage'
+import { Footer } from './components/Footer'
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <QuickStart />
           <Usage />
         </main>
+        <Footer />
       </div>
     </LanguageProvider>
   )
