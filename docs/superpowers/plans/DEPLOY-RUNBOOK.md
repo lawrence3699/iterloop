@@ -15,28 +15,33 @@ GitHub Actions 工作流 `.github/workflows/deploy-site.yml` 会在推送到 `ma
 `gh run watch`（或在 Actions 页查看 `Deploy site` 变绿）。绿了之后，站点会先在 `https://lawrence3699.github.io/...` 或 Pages 默认 URL 可访问。
 
 ## 4. 绑定自定义域名
-**Settings → Pages → Custom domain** 填 `iter-loop.com` → Save；证书签发后勾选 **Enforce HTTPS**。
-（`site/public/CNAME` 已包含 `iter-loop.com`，每次部署都会写入 `dist/`，所以域名不会在重新部署时丢失。）
+> 注意：用 **GitHub Actions 部署**时，`dist/CNAME` **不会**自动设置仓库的自定义域名（那是旧的"从分支部署"才有的行为）。必须显式设置：
+> ```
+> gh api -X PUT repos/lawrence3699/iterloop/pages -f cname=iter-loop.com
+> ```
+> （本项目已执行，`gh api repos/lawrence3699/iterloop/pages` 可见 `cname: iter-loop.com`。）证书签发后再启用 Enforce HTTPS。
 
-## 5. 配置 DNS（在 iter-loop.com 的域名注册商处）
-apex 裸域指向 GitHub Pages 的 4 个 A 记录 + 4 个 AAAA 记录：
+## 5. 配置 DNS —— iter-loop.com 在 **Cloudflare**（nameserver: *.ns.cloudflare.com）
+在 Cloudflare 控制台 → 该域名 → **DNS → Records** 操作。
 
-```
-类型    名称   值
-A       @     185.199.108.153
-A       @     185.199.109.153
-A       @     185.199.110.153
-A       @     185.199.111.153
-AAAA    @     2606:50c0:8000::153
-AAAA    @     2606:50c0:8001::153
-AAAA    @     2606:50c0:8002::153
-AAAA    @     2606:50c0:8003::153
-```
+**推荐方案 A：DNS-only（灰云），让 GitHub 自动签发 HTTPS**
+1. 删除现有指向 Cloudflare 的 `@` A/AAAA 记录（当前是橙云代理）。
+2. 新增 4 条 A 记录（名称 `@`，**Proxy status = DNS only / 灰云**）：
+   ```
+   A  @  185.199.108.153
+   A  @  185.199.109.153
+   A  @  185.199.110.153
+   A  @  185.199.111.153
+   ```
+3. （可选 IPv6）4 条 AAAA（灰云）：`2606:50c0:8000::153` / `8001::153` / `8002::153` / `8003::153`
+4. （可选）`CNAME  www  lawrence3699.github.io`（灰云）。
 
-可选：把 `www` 也指过去（便于 `www.iter-loop.com` 访问）：
-```
-CNAME   www   lawrence3699.github.io.
-```
+**方案 B：保留 Cloudflare 代理（橙云，用 CF 的 CDN/SSL）**
+- 同样设 4 条 `185.199.108–111.153` 的 A 记录，但保持橙云代理；
+- Cloudflare **SSL/TLS 模式设为 Full**（不要 Flexible）；
+- 此时 GitHub 无法验证域名，**不要**在 GitHub 勾选 Enforce HTTPS（由 Cloudflare 提供边缘证书）。
+
+简单起见推荐 **方案 A**。
 
 ## 6. 验证
 - `dig +short iter-loop.com` → 应返回上面 4 个 A 记录。
