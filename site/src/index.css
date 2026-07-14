@@ -832,6 +832,7 @@ a:focus-visible {
   color: #1e3d68;
   font-family: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .pricing-row strong {
