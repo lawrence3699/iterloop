@@ -1,9 +1,11 @@
 import {
+  Activity,
   ArrowRight,
   BookOpen,
   Check,
   ChevronRight,
   CircleGauge,
+  ClipboardCheck,
   Code2,
   FileText,
   GitFork,
@@ -12,11 +14,11 @@ import {
   Menu,
   RadioTower,
   ShieldCheck,
+  UserRoundPlus,
   X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { CONTENT, type Locale } from './content'
-import { ProductPreview } from './components/ProductPreview'
 
 const CONSOLE_URL = 'https://console.iter-loop.com'
 const API_URL = 'https://api.iter-loop.com/v1'
@@ -183,15 +185,18 @@ function App() {
                 <RadioTower size={16} aria-hidden="true" />
                 {copy.hero.eyebrow}
               </div>
-              <h1>IterLoop API</h1>
+              <h1>
+                <span>{copy.hero.title}</span>
+                <strong>{copy.hero.accent}</strong>
+              </h1>
               <p className="hero-lead">{copy.hero.lead}</p>
               <div className="hero-actions">
                 <a className="button button-primary" href={`${CONSOLE_URL}/sign-up`}>
                   {copy.hero.primaryAction}
                   <ArrowRight size={17} aria-hidden="true" />
                 </a>
-                <a className="button button-secondary" href={`${CONSOLE_URL}/docs`}>
-                  <BookOpen size={17} aria-hidden="true" />
+                <a className="button button-secondary" href="#pricing">
+                  <CircleGauge size={17} aria-hidden="true" />
                   {copy.hero.secondaryAction}
                 </a>
               </div>
@@ -202,7 +207,17 @@ function App() {
                 <strong>HTTP / SSE</strong>
               </div>
             </div>
-            <ProductPreview copy={copy.preview} />
+
+            <figure className="hero-product-media">
+              <figcaption>
+                <span>{copy.hero.imageLabel}</span>
+                <strong>
+                  <span className="status-dot" aria-hidden="true" />
+                  {copy.hero.imageStatus}
+                </strong>
+              </figcaption>
+              <img src="/iterloop-console-issuance.jpg" alt={copy.hero.imageAlt} />
+            </figure>
           </div>
         </section>
 
@@ -287,10 +302,46 @@ function App() {
           </div>
         </section>
 
+        <section className="section onboarding-section" id="onboarding">
+          <div className="page-width">
+            <div className="section-heading onboarding-heading">
+              <div>
+                <span className="section-index">03</span>
+                <p className="section-kicker">{copy.onboarding.kicker}</p>
+              </div>
+              <h2>{copy.onboarding.title}</h2>
+              <p>{copy.onboarding.description}</p>
+            </div>
+
+            <div className="onboarding-grid">
+              {copy.onboarding.items.map((item, index) => {
+                const icons = [UserRoundPlus, KeyRound, ClipboardCheck]
+                const Icon = icons[index] ?? ClipboardCheck
+                return (
+                  <article className="onboarding-step" key={item.title}>
+                    <div className="onboarding-step-heading">
+                      <span>{String(index + 1).padStart(2, '0')}</span>
+                      <Icon size={21} aria-hidden="true" />
+                    </div>
+                    <h3>{item.title}</h3>
+                    <p>{item.description}</p>
+                  </article>
+                )
+              })}
+            </div>
+
+            <a className="onboarding-link" href={`${CONSOLE_URL}/docs`}>
+              <BookOpen size={17} aria-hidden="true" />
+              {copy.onboarding.action}
+              <ArrowRight size={16} aria-hidden="true" />
+            </a>
+          </div>
+        </section>
+
         <section className="section docs-section" id="docs">
           <div className="page-width docs-grid">
             <div className="docs-copy">
-              <span className="section-index">03</span>
+              <span className="section-index">04</span>
               <p className="section-kicker">{copy.docs.kicker}</p>
               <h2>{copy.docs.title}</h2>
               <p>{copy.docs.description}</p>
@@ -317,6 +368,31 @@ supports_websockets = false
 base_url = "${API_URL}"
 wire_api = "responses"
 requires_openai_auth = true`}</pre>
+            </div>
+          </div>
+        </section>
+
+        <section className="supply-section">
+          <div className="page-width supply-grid">
+            <div className="supply-copy">
+              <p className="section-kicker">{copy.supply.kicker}</p>
+              <h2>{copy.supply.title}</h2>
+              <p>{copy.supply.description}</p>
+            </div>
+            <div className="supply-list">
+              {copy.supply.models.map((item) => (
+                <div className="supply-row" key={item.family}>
+                  <span className="supply-family">
+                    <Activity size={18} aria-hidden="true" />
+                    {item.family}
+                  </span>
+                  <code>{item.models}</code>
+                  <strong>
+                    <span className="status-dot" aria-hidden="true" />
+                    {copy.supply.status}
+                  </strong>
+                </div>
+              ))}
             </div>
           </div>
         </section>
